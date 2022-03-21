@@ -200,7 +200,7 @@
             </v-container>
             <div class="mt-5 d-flex justify-end ">
                 <v-btn small color="error mr-3" @click="reset">Cancelar</v-btn>
-                <v-btn small @click="submitSetting" color="success"  >Guardar</v-btn> 
+                <v-btn small @click="submitSetting" color="success"  >Actualizar</v-btn> 
             </div>
         </v-form>
         <Notificacion :snackbar="snackbar" :textmsj="textmsj"/>
@@ -213,6 +213,7 @@ import { required } from 'vee-validate/dist/rules'
 import { extend, ValidationObserver, ValidationProvider, setInteractionMode } from 'vee-validate'
 import { Setting } from "@/store/interfaces/Setting";
 import {serialize, deserialize } from 'jsonapi-fractal'
+import storageData from '@/store/services/storageService'
 
 @Component({
   components: {
@@ -229,7 +230,6 @@ export default class Configuracion extends Vue {
     overlay = false;
     settingForm = {
         id:'1',
-        logo: '' ,
         reactivar_sesion : 0,
         id_almacen: 0,
         ver_stock_art: 0,
@@ -244,6 +244,7 @@ export default class Configuracion extends Vue {
         filtro_procedencia: false,
         filtro_precio: false,
     }
+    logo = ''
     snackbar = false
     textmsj     = ''
     precio      = false
@@ -270,23 +271,24 @@ export default class Configuracion extends Vue {
         }
     };
 
-     get FormRequest(): any {
+    get FormRequest(): any {
         return serialize(this.settingForm,'configuracionesgenerales',{});
     } 
     onFilePicked (e) {
-        const files = e.target.files
+        const files = e.target.files   
         if(files[0] !== undefined) {
             this.imageName = files[0].name
             if(this.imageName.lastIndexOf('.') <= 0) {
                 return
             }
+       
             const fr = new FileReader ()
             fr.readAsDataURL(files[0])
             fr.addEventListener('load', () => {
                 this.imageUrl = fr.result
                 this.imageFile = files[0]
-                this.settingForm.logo = this.imageFile
-            })
+                this.logo = this.imageFile
+            }) 
         } else {
             this.imageName = ''
             this.imageFile = ''
@@ -299,18 +301,26 @@ export default class Configuracion extends Vue {
     };
     async submitSetting() {
         const valid = await this.$refs.settingForm.validate();
-        if (valid) {
+        if (this.logo) {
+            if (valid) {
+                this.overlay = true
+                const dataLogo = await settingModule.saveLogoSetting(this.logo)
+                const data = await settingModule.saveSetting(this.FormRequest)
+                this.textmsj = 'Configuración Actualizada con Éxito.'
+                this.snackbar = true
+                this.configuraciones();
+                this.overlay = false 
+            } else {
+                //return false
+            }
+        } else {
             this.overlay = true
             const data = await settingModule.saveSetting(this.FormRequest)
             this.textmsj = 'Configuración Actualizada con Éxito.'
             this.snackbar = true
             this.configuraciones();
-            this.overlay = false
-    
-        } else {
-            //return false
-        }     
-   
+            this.overlay = false 
+        }    
     };
     getAlmacenes() {   
         settingModule.getAlmacenAll()
@@ -327,6 +337,8 @@ export default class Configuracion extends Vue {
         .then((res:any) =>  {
             if (res) {
                 this.settingForm = res[0];
+                storageData.remove('_setting');
+                storageData.set('_setting', res[0]);
                 //TO-DO = 'Lógica para manipular los v-switch toggle'
                 this.settingForm.filtro_precio      = (res[0]['filtro_precio']      == "0") ? false : true
                 this.settingForm.filtro_categoria   = (res[0]['filtro_categoria']   == "0") ? false : true
@@ -334,7 +346,10 @@ export default class Configuracion extends Vue {
                 this.settingForm.filtro_sublinea    = (res[0]['filtro_sublinea']    == "0") ? false : true
                 this.settingForm.filtro_color       = (res[0]['filtro_color']       == "0") ? false : true
                 this.settingForm.filtro_procedencia = (res[0]['filtro_procedencia'] == "0") ? false : true
+                this.imageUrl = res[0]['logo']
+                this.imageName = 'logo.jpg'
                 this.snackbar = false
+              
             }
         this.overlay = false
       }

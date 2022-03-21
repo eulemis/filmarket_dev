@@ -9,7 +9,7 @@ import {
   import store from '@/store';
   import { Contacto } from '../interfaces/Contacto';
   import { UserToken } from '../interfaces/UserToken';
-  import { http } from '@/utils/http';
+  import { http, https } from '@/utils/http';
   import { deserialize } from 'jsonapi-fractal'
   
   @Module({
@@ -29,10 +29,8 @@ import {
     @Action
         getArticulosAll() {
           return new Promise((resolve, reject) => {
-            http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
             http.get(`/productos?page[number]=1&sort=-id`)
           .then(response =>  {
-      
                 if (response.status === 200) {     
                   	resolve(response);
                 }
@@ -45,7 +43,6 @@ import {
     @Action
 		getArticuloById(id:number) {
 			return new Promise((resolve, reject) => {
-				http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 				http.get(`productos/${id}`)
 				.then(response => {
 					if (response.status === 200) {   
@@ -60,7 +57,6 @@ import {
 
     @Action
 		async saveArticulo(dataClient: Contacto) { 
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.post('/productos', dataClient,
 			{
@@ -73,24 +69,30 @@ import {
 				return await this.getArticulosAll();
 			}
 		}  
-    @Action({rawError: true})
-		async updateArticulo(dataClient:Contacto) { 
-			let data : Contacto = deserialize(dataClient,{changeCase:'camelCase'});
-			let id = data.id
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
-		const response =  await http
-			.patch(`productos/${id}`, dataClient,
+    @Action
+		async updateArticulo(data:any) { 
+		 	const response =  await http.post(`productofotos/${data.id}/upload`, data.formdata,
 			{
 				headers: {
-				"Content-type": "application/vnd.api+json",
-				"Accept" : 'application/vnd.api+json'
+					'Content-Type': 'multipart/form-data'
 				}
 			})
+			console.log(response)
 			if (response.status === 200 || response.status === 201){
-				return await this.getArticulosAll();
-			}
-		}  
-		
+				return response;
+			} 
+		} 
+	@Action
+		async getArticuloWithFotoById(id:number){
+			return new Promise((resolve, reject) => {
+				http.get(`productofotos/${id}`)
+				.then(response => {
+					if (response.status === 200) {  
+						resolve(response); 
+					}
+				})
+			})	
+		}		
   }  
   
   export default getModule(articuloModule);

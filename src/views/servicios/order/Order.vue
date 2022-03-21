@@ -1,5 +1,11 @@
 <template>
     <div style="padding:2%" class="order">
+        <v-overlay :value="overlay">
+        <v-progress-circular
+            indeterminate
+            size="64"
+        ></v-progress-circular>
+        </v-overlay>
         <TitleSection :sectiontitle="sectiontitle"/>
         <form-wizard
         class="test"
@@ -42,20 +48,24 @@
                         </v-list>
                     </v-expand-transition>
                 </v-col>
+                <v-col
+                cols="12"
+                sm="12"
+                md="12"
+                >
+                <v-textarea
+                    label="Direccion Entrega"
+                    placeholder="Direccion Entrega"
+                    outlined
+                    dense
+                    v-model="direccion_entrega"
+                    rows="3"
+                ></v-textarea>
+                </v-col>
             </tab-content>
             <tab-content title="Lista de Articulos"  icon="mdi mdi-cart-outline">
                 <v-row>
-                    <v-col cols="12" md="4">
-                        <v-card-text class="panel_white">
-                            <div class="d-flex justify-space-between align-center">
-                                <div class="card-title mb-0">Filter</div>
-                                <v-btn color="primary" small dark>
-                                    <v-icon>mdi-reload</v-icon>
-                                </v-btn>
-                            </div>
-                        </v-card-text>
-                    </v-col>
-                    <v-col cols="12" md="8">
+                    <v-col cols="12" md="12">
                         <v-card-text class="pa-0 pr-3 align-center panel_white" >
                             <div class="d-flex justify-space-between align-center flex-wrap">
                                 <div>
@@ -120,7 +130,10 @@
                                     </v-card-title>
                                     <v-card-text>
                                         <div class="d-flex justify-space-between align-center">
-                                         <FiltrosProductos  v-on:getFilterOrder="filterCategory"/>
+                                         <FiltrosProductos  
+                                         v-on:getFilterOrder="filterCategory"
+                                         v-on:getArticulosRefresh="refreshArticulos"
+                                         />
                                         </div>
                                     </v-card-text>
                                 </div>
@@ -131,7 +144,7 @@
                         <v-row>
                             <v-col
                                 v-for="(product, index) in filterProductList"
-                                v-show="setPaginate(index)"
+                           
                                 :key="index"
                                 cols="12"
                                 :class="{'col-lg-4 col-md-6 col-sm-6': !isListView, 'col-md-12': isListView}">
@@ -150,9 +163,10 @@
                                                 'object-contain h-64 w-full': !isListView,
                                                 'object-contain   pa-3': isListView
                                             }"
-                                            :src="product.imgUrl"
+                                            :src="product.foto"
                                             :height="!isListView ? 150 : ''"
                                             :width="isListView ? 128 : ''"
+                                            @click="verDetallesArticulo(product.id)"
                                         />
 
                                         <v-card-text
@@ -162,7 +176,7 @@
                                         >
                                             <p class="text-18 ma-0 ">
                                                 <a href="#" class="text--primary">
-                                                    {{ product.title }}
+                                                    {{ product.descripcion }}
                                                 </a>
                                             </p>
                                             <p
@@ -171,7 +185,7 @@
                                                 }"
                                                 class="body-2 text--disabled font-weight-thin"
                                             >
-                                                {{ product.details }}
+                                                {{ product.descripcion }}
                                             </p>
                                             <div
                                                 :class="{
@@ -187,7 +201,7 @@
                                                         'ml-4': isListView
                                                     }"
                                                 >
-                                                   Stock : {{ product.price }}
+                                                   Stock : {{ product.stockdisponible_p }}
                                                 </div>
                                             
                                                 <div
@@ -196,7 +210,7 @@
                                                         'ml-4': isListView
                                                     }"
                                                 >
-                                                    ${{ product.price }}
+                                                    ${{ product.precio }}
                                                 </div>
                                             </div>
 
@@ -229,9 +243,9 @@
                             </v-col>
                             <v-col cols="12">
                                 <v-pagination
-                                v-model="current"
-                                :length="paginate_total"
-                                @click.prevent="updateCurrent(page_index)">
+                                v-model="pagination.current_page"
+                                :length="paginate"
+                                @input="next">
                                 circle
                                 </v-pagination>
                             </v-col>
@@ -286,6 +300,7 @@ import clientModule from '@/store/modules/clientModule';
 import sessionModule from '@/store/modules/sessionModule';
 import storageData from '@/store/services/storageService'
 import FiltrosProductos from '@/components/FiltrosProductos.vue'
+import {serialize, deserialize } from 'jsonapi-fractal'
 
 import cartDrawer from '@/components/cartDrawer.vue'
 @Component({
@@ -299,7 +314,7 @@ export default class Order extends Vue {
     cartDrawer = false
     cartCount = 0
     current = 1
-    paginate = 3
+    paginate = 9
     paginate_total = 0
     isColumnTwelve = false
     isColumnFour = true
@@ -311,99 +326,37 @@ export default class Order extends Vue {
     brands = []
     rating = []
     selected = false
-    isListView = false
+    isListView = true
     dataSearchCliente : any = [];
     descriptionLimit = 60;
     isLoading = false;
     query = ''
     model = null;
     sectiontitle = ''
-    filterProductList : any = [
-    {
-        id: '1',
-        imgUrl: require('@/assets/images/products/audio/earbuds.png'),
-        price: 324,
-        totalUnit: 100,
-        details: '6G , 4k FPS',
-        title: 'Steelseries Speaker Venue 8',
-        category: 'audio',
-        brand: 'Microlab',
-        rating: 5,
-        qty: 0,
-        freeShipping: false,
-        description: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.`
-    },
-    {
-        id: '2',
-        imgUrl: require('@/assets/images/products/audio/earphone.png'),
-        price: 454,
-        totalUnit: 100,
-        details: '6G , 4k FPS',
-        title: 'Razer Speaker',
-        category: 'audio',
-        brand: 'Microlab',
-        rating: 3,
-        qty: 0,
-        freeShipping: true,
-        description: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.`
-    },
-    {
-        id: '3',
-        imgUrl: require('@/assets/images/products/audio/microphone.png'),
-        price: 134,
-        totalUnit: 100,
-        details: '6G , 4k FPS',
-        title: 'Bass Speaker',
-        category: 'audio',
-        brand: 'Sony',
-        rating: 4,
-        qty: 0,
-        freeShipping: true,
-        description: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.`
-    },
-    {
-        id: '4',
-        imgUrl: require('@/assets/images/products/audio/speaker.png'),
-        price: 987,
-        totalUnit: 100,
-        details: '6G , 4k FPS',
-        title: 'Bit Bass Headphone',
-        category: 'audio',
-        brand: 'Sony',
-        rating: 5,
-        qty: 0,
-        freeShipping: true,
-        description: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.`
-    },
-    {
-        id: '5',
-        imgUrl: require('@/assets/images/products/mobile/samsung.png'),
-        price: 978,
-        totalUnit: 100,
-        details: '6G , 4k FPS',
-        title: 'Iphone 11 Max Pro',
-        category: 'cellphone',
-        brand: 'Iphone',
-        rating: 2,
-        qty: 0,
-        freeShipping: true,
-        description: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.`
-    },
-    {
-        id: '6',
-        imgUrl: require('@/assets/images/products/accessories/wireless.png'),
-        price: 12,
-        totalUnit: 100,
-        details: '6G , 4k FPS',
-        title: 'IPhone 11 Max Pro Case',
-        category: 'accessories',
-        brand: 'Iphone',
-        rating: 4,
-        qty: 0,
-        freeShipping: true,
-        description: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.`
+    filterProductList : any = []
+    listarArticulos : any = [];
+    pagination :any = {
+        current_page : 0,
+        from : 0,
+        last_page : 0,
+        per_page : 0,
+        to : 0,
+        total : 0
     }
-    ]
+    direccion_entrega = ''
+    id_cliente = ''
+    id_condiciones_pagos = ''
+    overlay = false;
+    datapaginate : any = {
+        id_cliente:0,
+        page:0
+    }
+    datafilter : any = {
+        id_cliente:0,
+        filter:'',
+        page:1
+    }
+
 
     // search
     loading = false
@@ -414,14 +367,29 @@ export default class Order extends Vue {
 
     created() {
   
-        this.productList =  this.filterProductList
-        this.paginate_total = Math.ceil(
-            this.filterProductList.length / this.paginate
-        )
-  
+    
+
     }
-    filterCategory(event){
-        console.log(event)
+    async filterCategory(event){
+        this.datafilter.id_cliente = this.id_cliente
+        this.datafilter.filter     = event
+        this.overlay = true
+        const res : any = await orderModule.getArticulosVariusFilter(this.datafilter);
+        this.pagination.current_page = res.data.meta.page.current_page,
+        this.pagination.from = res.data.meta.page.from,
+        this.pagination.last_page = res.data.meta.page.last_page,
+        this.pagination.per_page = res.data.meta.page.per_page,
+        this.pagination.to = res.data.meta.page.to,
+        this.pagination.total = res.data.meta.page.total 
+        this.listarArticulos = deserialize(res.data)
+        this.filterProductList = this.listarArticulos
+        this.productList =  this.filterProductList
+        this.paginate = Math.ceil(this.pagination.total / this.pagination.per_page)
+        this.overlay = false
+    }
+    async refreshArticulos(event){
+        storageData.remove('filterActive');
+        this.getArticulosByCliente(this.id_cliente)
     }
     get getCartOrder() {
         return orderModule.getCartList; 
@@ -439,7 +407,7 @@ export default class Order extends Vue {
     totalAmount() {
         let total = 0
         return (total += this.getCartOrder.reduce(
-            (left, cur) => left + cur.price * cur.qty,
+            (left, cur) => left + cur.precio * cur.qty,
             0
         ))
     }
@@ -448,57 +416,84 @@ export default class Order extends Vue {
         if (item.qty == 1) this.cartCount++
     }
     setPaginate(i) {
-        if (this.current == 1) {
-            return i < this.paginate
+        alert(i)
+        if (this.pagination.current_page == 1) {
+            return i < this.pagination.per_page
         } else {
             return (
-                i >= this.paginate * (this.current - 1) &&
-                i < this.current * this.paginate
+                i >= this.pagination.per_page * (this.pagination.current_page - 1) &&
+                i < this.pagination.current_page * this.pagination.per_page
             )
         }
     }
     updateCurrent(i) {
-        this.current = i
+
+        this.pagination.current_page = i
+    }
+    async next (page:number) {
+        this.datafilter.page = page
+        if(storageData.get('filterActive')){
+            this.filterCategory(storageData.get('filterActive'))
+        }else{
+            this.datapaginate.id_cliente = this.id_cliente
+            this.datapaginate.page = page
+            this.overlay = true
+            const res : any = await orderModule.getDataPaginateAticulos(this.datapaginate);
+            this.pagination.current_page = res.data.meta.page.current_page,
+            this.pagination.from = res.data.meta.page.from,
+            this.pagination.last_page = res.data.meta.page.last_page,
+            this.pagination.per_page = res.data.meta.page.per_page,
+            this.pagination.to = res.data.meta.page.to,
+            this.pagination.total = res.data.meta.page.total  
+            this.listarArticulos = deserialize(res.data)
+            this.filterProductList = this.listarArticulos
+            this.productList =  this.filterProductList
+            this.paginate = Math.ceil(this.pagination.total / this.pagination.per_page) 
+            this.overlay = false 
+        }
+       
+   /*  */
     }
     productRate(rate) {
         this.filterProductList = this.productList.filter(
             (x:any) => x.rating == rate.rates
         )
 
-        if (this.current > 1) this.current = 1
-        this.paginate_total = Math.ceil(
-            this.filterProductList.length / this.paginate
+        if (this.pagination.current_page > 1) this.pagination.current_page = 1
+        this.pagination.total = Math.ceil(
+            this.filterProductList.length / this.pagination.per_page
         )
     }
     allProductPrice() {
         this.filterProductList = this.productList.filter(
             (x:any) => x.price >= 0
         )
-        if (this.current > 1) this.current = 1
-        this.paginate_total = Math.ceil(
-            this.filterProductList.length / this.paginate
+        if (this.pagination.current_page > 1) this.pagination.current_page = 1
+        this.pagination.per_page_total = Math.ceil(
+            this.filterProductList.length / this.pagination.per_page
         )
     }
     lessThan() {
         this.filterProductList = this.productList.filter(
             (x:any) => x.price < 500
         )
-        if (this.current > 1) this.current = 1
-        this.paginate_total = Math.ceil(
-            this.filterProductList.length / this.paginate
+        if (this.pagination.current_page > 1) this.pagination.current_page = 1
+        this.pagination.per_page_total = Math.ceil(
+            this.filterProductList.length / this.pagination.per_page
         )
     }
     moreThan() {
         this.filterProductList = this.productList.filter(
             (x:any) => x.price >= 500
         )
-        if (this.current > 1) this.current = 1
-        this.paginate_total = Math.ceil(
-            this.filterProductList.length / this.paginate
+        if (this.pagination.current_page > 1) this.pagination.current_page = 1
+        this.pagination.per_page_total = Math.ceil(
+            this.filterProductList.length / this.pagination.per_page
         )
     }
     procesarPago(){
-        this.$router.push({ name: "procesarenvio"});
+        this.$router.push({ name: "procesarenvio",params: { direccion: this.direccion_entrega,
+        id_cliente : this.id_cliente, id_condiciones_pagos : this.id_condiciones_pagos }});
     }
     get items () {
         return this.dataSearchCliente.map(entry => {
@@ -524,14 +519,33 @@ export default class Order extends Vue {
 		this.isLoading = false
 	}
     async getClienteAndArticulos(event){
-        console.log(event)
+        this.overlay = true
         const dataCliente : any = await clientModule.getClientById(event)
+        this.direccion_entrega = dataCliente.direccion_entrega
+        this.id_cliente        = dataCliente.id
+        this.id_condiciones_pagos = dataCliente.id_condiciones_pagos
+        this.overlay = false
         if (dataCliente) {
-            const datArticulos : any = await orderModule.getArticulosByCliente(event);
+            this.getArticulosByCliente(event);    
         }
-      
     }
-
+    async getArticulosByCliente (event){
+        const res : any = await orderModule.getArticulosByCliente(event);
+        this.pagination.current_page = res.data.meta.page.current_page,
+        this.pagination.from = res.data.meta.page.from,
+        this.pagination.last_page = res.data.meta.page.last_page,
+        this.pagination.per_page = res.data.meta.page.per_page,
+        this.pagination.to = res.data.meta.page.to,
+        this.pagination.total = res.data.meta.page.total 
+        this.listarArticulos = deserialize(res.data)
+        this.filterProductList = this.listarArticulos
+        this.productList =  this.filterProductList
+        this.paginate = Math.ceil(this.pagination.total / this.pagination.per_page)
+    }
+    verDetallesArticulo(id_articulo){
+        this.$router.push({ name: "detalleArticulo",params: { id: id_articulo }});
+        console.log(id_articulo)
+    }
     gridView() {
         this.isListView = false
     }
@@ -540,7 +554,6 @@ export default class Order extends Vue {
     }
     mounted(){
         this.dataSetting = this.settingConfig //Configuracion General del cliente Guardada en LocalStorage
-        console.log(this.dataSetting)
     }
 
 }
@@ -555,5 +568,8 @@ export default class Order extends Vue {
         background: white;
         padding: 3%;
         border-radius: 8px;
+    }
+    .object-contain{
+        cursor:pointer;
     }
 </style>

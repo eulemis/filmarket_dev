@@ -25,7 +25,6 @@ import {
   
     @Action
 		async saveUsuarioAdmin(dataAdmin: Usuarios) { 
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.post('usuario/crearadmin', dataAdmin,
 			{
@@ -40,7 +39,6 @@ import {
 		}  
     @Action
 		async saveUsuarioCliente(dataCliente: Usuarios) { 
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.post('usuario/asignar', dataCliente,
 			{
@@ -56,7 +54,6 @@ import {
     @Action
 		async saveUsuarioVendedor(dataVendedor: any) { 
 			console.log(dataVendedor)
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.post('/usuario/asignar', dataVendedor,
 			{
@@ -73,7 +70,6 @@ import {
 	@Action
 		getFilterSearch(data:any) {
 			return new Promise((resolve, reject) => {
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 			http.get(`/vendedores?filter[${data.filter}]=${data.query}&sort=-id`)
 				.then(response =>  {
 			
@@ -91,7 +87,6 @@ import {
 		@Action
 		async dataPaginate(page:number) {
 		  return new Promise((resolve, reject) => {
-			  http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 			  http.get(`/vendedores?page[number]=${page}&sort=-id`)
 			.then(response =>  {
 		

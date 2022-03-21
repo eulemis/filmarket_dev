@@ -9,7 +9,7 @@ import {
 import store from '@/store';
 import { Setting } from '../interfaces/Setting';
 import { UserToken } from '../interfaces/UserToken';
-import { http } from '@/utils/http';
+import { http, https } from '@/utils/http';
 import { deserialize } from 'jsonapi-fractal'
 
 @Module({
@@ -29,38 +29,46 @@ class settingModule extends VuexModule {
     this.almacen = almacen;
   }
 
-  @Action
-  async saveSetting(dataSetting: Setting) { 
-    http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
-    await http
-      .patch('/configuracionesgenerales/1', dataSetting,
-      {
-        headers: {
-          "Content-type": "application/vnd.api+json",
-          "Accept" : 'application/vnd.api+json'
-        }
-      })
-      .then((payload: any) => {
+  	@Action
+  	async saveSetting(dataSetting: Setting) { 
+    await https.patch('/configuracionesgenerales/1', dataSetting,
+		{
+			headers: {
+			"Content-type": "application/vnd.api+json",
+			"Accept" : 'application/vnd.api+json'
+			}
+		})
+		.then((payload: any) => {
+			if (payload) {
+			if (payload.status === 200) {
+				
+			}
+			} 
+		})
+		.catch((e) => {
+		
+		});
+    	return dataSetting;
+  	}
 
-        if (payload) {
-          if (payload.status === 200) {
-            
-          }
-        } else {
-       
-        }
-      })
-      .catch((e) => {
-      
-      });
-   
-    return dataSetting;
-  }
-
+	  
+  	@Action
+  	async saveLogoSetting(LogoSetting: any) { 
+		let formData = new FormData();
+		formData.append('logo', LogoSetting);
+ 	 	const response =  await https.post('/configuracionesgenerales/1/upload', formData,
+		{
+		headers: {
+			'Content-Type': 'multipart/form-data'	
+		} 
+		})
+		if (response.status === 201){
+			return console.log(response)
+		} 
+	}
   	@Action
   	getAlmacenAll() {
     	return new Promise((resolve, reject) => {
-      	http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
       	http.get('/almacenes')
         .then(response => {
           console.log(response)
@@ -85,21 +93,20 @@ class settingModule extends VuexModule {
   @Action
   	getConfiguraciones() {
 		return new Promise((resolve, reject) => {
-		//http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
-		http.get('/configuracionesgenerales')
-		.then(response => {
+      https.get('/configuracionesgenerales')
+      .then(response => {
 
-			if (response.status === 200) {
-				let item : any = [];
-				item = deserialize(response.data)
-				resolve(item);
-			}
+        if (response.status === 200) {
+          let item : any = [];
+          item = deserialize(response.data)
+          resolve(item);
+        }
 
-		})
-		.catch(error => {
+      })
+      .catch(error => {
 
-			reject(error)
-		})
+        reject(error)
+      })
 	})
 	}
   

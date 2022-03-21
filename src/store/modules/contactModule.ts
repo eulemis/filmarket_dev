@@ -58,7 +58,6 @@ import {
 
     @Action
 		async saveContact(dataClient: Contacto) { 
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.post('/contactos', dataClient,
 			{
@@ -75,8 +74,7 @@ import {
 		async updateContact(dataClient:Contacto) { 
 			let data : Contacto = deserialize(dataClient,{changeCase:'camelCase'});
 			let id = data.id
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
-		const response =  await http
+			const response =  await http
 			.patch(`contactos/${id}`, dataClient,
 			{
 				headers: {
@@ -92,7 +90,6 @@ import {
 		async deleteContacto(dataClient : any) { 
 		let data : any  = deserialize(dataClient,{changeCase:'camelCase'});
 		let id = data.id
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.patch(`contactos/${id}`, dataClient,
 			{
@@ -142,6 +139,23 @@ import {
 			})
 		})
 	}
+	@Action
+		getFilterSearch(data:any) {
+ 			return new Promise((resolve, reject) => {
+			http.get(`/contactos?filter[${data.filter}]=${data.query}&sort=-id`)
+				.then(response =>  {
+			
+					if (response.status === 200) {      
+						let search : any = [];
+						search = deserialize(response.data)
+						resolve(search);
+					}
+				})
+				.catch(error => {
+				reject(error)
+				})
+			}) 
+		}
 
   }  
   

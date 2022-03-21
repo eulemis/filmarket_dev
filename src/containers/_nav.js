@@ -62,7 +62,7 @@ export default [
           },
           {
             name: 'Orders',
-            to: '/order'
+            to: '/listapedidos'
           }
         ]
       },

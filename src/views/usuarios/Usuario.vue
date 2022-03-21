@@ -1,56 +1,39 @@
 <template>
-    <v-app>
-        <v-overlay :value="overlay">
+    <v-row>
+    	<v-overlay :value="overlay">
         <v-progress-circular
             indeterminate
             size="64"
+            class="laoding"
         ></v-progress-circular>
         </v-overlay>
-        <v-form class="form-container" 
-            lazy-validation 
-            ref="usersForm"
-          >
-            <TitleSection :sectiontitle="sectiontitle"/>
-            <v-container >
-                <v-layout row wrap >
-                     <v-col cols="12" sm="6" md="3">
-                        <v-text-field label="Nombre Completo" placeholder="Nombre Completo" outlined dense :rules="rules" v-model="usersForm.name">
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12" sm="6" md="3">
-                        <v-text-field
-                        label="Email"
-                        placeholder="Email"
-                        outlined
-                        dense
-                        :rules="emailRules"
-                        v-model="usersForm.email"
-                    ></v-text-field>
-                    </v-col>
-                    <v-col cols="12" sm="6" md="3">
-                        <v-text-field    :type="show ? 'text' : 'password'"  label="Password" placeholder="Password" outlined dense :rules="rules" v-model="usersForm.password"  @click:append="show = !show">
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12" sm="6" md="3">
-                        <v-text-field  :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"   :type="show ? 'text' : 'password'" @keyup="validarPassword()" label="Password Confirmation" placeholder="Password Confirmation" outlined dense :rules="rules" v-model="usersForm.password_confirmation"  @click:append="show = !show">
-                        </v-text-field>
-                    </v-col>
-                </v-layout>
-            </v-container>
-            <div class="mt-5 d-flex justify-end ">
-                <v-btn small color="primary mr-3" @click="reset">Limpiar</v-btn>
-                <v-btn small @click="submitSetting" color="success"  >Guardar</v-btn> 
-            </div>
-        </v-form>
+        <ButtonOpen  @openView="openView" :title="title" />
+        <v-col cols="12">
+            <Filtro  :endpoint="endpoint" :headers="headers"  :label="label" :moduleStore="moduleStore" v-on:updateData="handleDataUser"/>
+        </v-col>
+        <v-col cols="12">
+            <DataTable :search="search" 
+            :headers="headers" 
+            :desserts="desserts" 
+            :loading="loadTable" 
+            @customChange="openView"  
+            :title="title" 
+            @edit="editarUsuario" 
+            @delete="showModalDelete" 
+            :moduleStore="moduleStore" 
+            v-on:updateData="handleDataUser"
+            :section="section"
+            :endpoint="endpoint"
+            />
+        </v-col>
+        <ModalDelete @deleteData="deleteUsuario" :dialogDelete="dialogDelete" @cerrarModal="cerrarModal"/>
         <Notificacion :snackbar="snackbar" :textmsj="textmsj"/>
-    </v-app>
+    </v-row>
 </template>
+
 <script lang="ts">
-import { Vue, Component } from 'vue-property-decorator';
-import usersModule from '@/store/modules/usersModule';
-import { required } from 'vee-validate/dist/rules'
-import { extend, ValidationObserver, ValidationProvider, setInteractionMode } from 'vee-validate'
-import { Usuarios } from "@/store/interfaces/Usuarios";
+import { Vue, Component, Prop }     from 'vue-property-decorator';
+import usuariosModule            from '@/store/modules/usersModule';
 import {serialize, deserialize } from 'jsonapi-fractal'
 
 @Component({
@@ -58,81 +41,114 @@ import {serialize, deserialize } from 'jsonapi-fractal'
 
   }
 })
-export default class Users extends Vue {
-
+export default class Usuario extends Vue {
+	@Prop() item?: Object;
+    headers = [
+            {text: 'Nombre Completo', value: 'nombres'},
+            {text: 'Email', value: 'email'},
+            {text: 'Action', value: 'action'}
+            ];
+    section : string = 'Usuarios'
     overlay = false;
-    show : Boolean =  false;
-    usersForm = {
-        name:'',
-        email:'',
-        device_name:'android',
-        password:'',
-        password_confirmation:'',
-        is_admin:1
+    desserts : any = [];
+    search   : String = '';
+    selected : Object = [];
+    loadTable  : boolean = true ;
+    clientes : any = [];
+    dialog : boolean = false;
+    dialogDelete : boolean = false;
+    title  : string = 'NEW USUARIO'
+    tituloModal : string = ''
+    dataEditForm : object = {}
+    dataDeleteForm  = {
+        id : '',
+        deletedAt : ''
     }
     snackbar = false
-    textmsj     = '' 
-    sectiontitle = 'Crear Usuario'
-  
-    data(){
-    return{
-        rules: [
-            (v:any) => !!v || 'Campo requerido'
-        ],
-        emailRules: [
-			v => !!v || 'E-mail is requerido',
-			v => /.+@.+/.test(v) || 'E-mail must be valid',
-		],  
-            
-        }
-    };
-    validarPassword(){
-        console.log(this.usersForm.password_confirmation)
+    textmsj = ''
+    timeout = 2000
+    label = 'Buscar Usuarios'
+    moduleStore = usuariosModule
+    page = 1
+    endpoint : string = 'usuarios'
+
+    get FormRequestDelete(): any {
+        return serialize(this.dataDeleteForm,'usuarios',{});
+    }
+    openView(){
+        this.$router.push({ name: "createusuario"});
     }
 
-    get FormRequestAdmin(): any {
-        return serialize(this.usersForm,'crearadmin',{});
+    showModalDelete(id){
+        this.dialogDelete = true;
+        this.dataDeleteForm.id = id
+        this.dataDeleteForm.deletedAt = this.currentDate()
+    }
+    cerrarModal(event){
+        this.dialogDelete = event;
+    }
+     async deleteUsuario(event){
+        let dataUpdate : any = []
+        this.dialogDelete = event;
+        this.overlay = true
+     /*    const res : any = await usuariosModule.deleteUsuario(this.FormRequestDelete);
+        dataUpdate = deserialize(res.data) */
+        this.desserts = dataUpdate;
+        this.textmsj = 'Usuario inabilitado con Éxito.'
+        this.snackbar = true
+        this.closeSnackbar()
+        this.overlay = false
     } 
-
-    $refs!: {
-        usersForm: InstanceType<typeof ValidationObserver>;
-    };
-    async submitSetting() {
-        console.log(this.FormRequestAdmin)
-        const valid = await this.$refs.usersForm.validate();
-        if (valid) {
-            this.overlay = true
-            const data = await usersModule.saveUsuarioAdmin(this.FormRequestAdmin)  
-            this.textmsj = 'Usuario Creado con Éxito.'
-            this.snackbar = true
-            this.overlay = false
-    
-        } else {
-            //return false
-        }      
-   
-    };
-    reset () {
-        if (!this.$refs.usersForm.validate()) {
-            this.$refs.usersForm.reset()
-        }  
-    };
-    mounted() {
+    closeSnackbar(){
+        setTimeout(() => {
+            this.snackbar = false
+        },2000);
     }
-}
+    handleDataUser(event){
+        this.desserts = event;
+        this.loadTable = false;
+    }
+    currentDate() {
+        var date = new Date();
+        return  date.toISOString();
+    }
 
+    editarUsuario(id_usuario) {
+        this.$router.push({ name: "editarusuario", params: { id: id_usuario } });
+    }
+
+}
 </script>
 <style lang="scss" scoped>
-    .form-container{
-        background-color: white;
-        padding: 4%;
-        border-radius: 5px;
+::v-deep .table-one {
+    thead.v-data-table-header {
+        tr {
+            &:hover {
+                background-color: #f2f3f8;
+            }
+            th {
+                span {
+                    font-size: 16px;
+                    color: #304156;
+                }
+            }
+        }
+        tr {
+            td {
+                padding-bottom: 20px;
+                padding-top: 20px;
+            }
+        }
     }
-    .img_prev{
-        float: right;
-        margin-top: -20px;
-        margin-right: 12px;
-        border-radius: 5px;
-        width:250px;
-    } 
+    tbody {
+        tr {
+            &:hover {
+                background-color: #f2f3f8 !important;
+            }
+        }
+    }
+}
+.loading{
+    z-index:210;
+}
 </style>

@@ -24,7 +24,7 @@ import {
 	@Action
 	    getFilterSearch(data:any) {
 			return new Promise((resolve, reject) => {
-			  http.defaults.headers.common['Authorization'] =  this.token;
+			  http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
         if (data.endpoint == 'contactos' ) {
           http.get(`/${data.endpoint}?include=clientes&filter[${data.filter}]=${data.query}&sort=-id`)
           .then(response =>  {
@@ -59,16 +59,15 @@ import {
 	  dataPaginate(data:any) {
          return new Promise((resolve, reject) => {
             if (data.endpoint == 'contactos') {
-                http.get('/contactos',{
+                http.get(`/contactos?include=clientes&page[number]=1&sort=-id`,{
 					headers: {
 						"Accept" : 'application/vnd.api+json'
 					}	
 				})  
                 .then(response =>  {
-
-				if (response.status === 200) {     
-					resolve(response);
-				}
+                    if (response.status === 200) {     
+                        resolve(response);
+                    }
             })
             .catch(error => {
                 reject(error)

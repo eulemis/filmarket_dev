@@ -7,7 +7,7 @@
             class="laoding"
         ></v-progress-circular>
         </v-overlay>
-        <ButtonOpen  @openView="openView" :title="title" />
+        <ButtonOpen  @openView="openView" :title="title"/>
         <v-col cols="12">
             <Filtro  :endpoint="endpoint" :headers="headers" :label="label" :moduleStore="moduleStore" v-on:updateData="handleDataContacto"/>
         </v-col>
@@ -45,14 +45,14 @@ export default class Contacto extends Vue {
 	@Prop() item?: Object;
   
     headers = [
-        {text: 'Nombre Completo', value: 'nombre_completo'},
-        {text: 'Cliente', value: 'clientes.razon_social'},
-        {text: 'Cargo', value: 'cargo'},
-        {text: 'Email', value: 'email'},
-        {text: 'Telefono', value: 'telefono'},
-        {text: 'Celular', value: 'celular'},
-        {text: 'Action', value: 'action'}
-    ];
+            {text: 'Nombre Completo', value: 'nombre_completo'},
+            {text: 'Cliente', value: 'clientes.razon_social'},
+            {text: 'Cargo', value: 'cargo'},
+            {text: 'Email', value: 'email'},
+            {text: 'Telefono', value: 'telefono'},
+            {text: 'Celular', value: 'celular'},
+            {text: 'Action', value: 'action'}
+            ];
     section : string = 'contacto'
     overlay = false;
     desserts : any = [];

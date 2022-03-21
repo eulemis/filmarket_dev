@@ -1,0 +1,15 @@
+export interface Pedidos {
+    co_pedido: String,
+    fecha: String,
+    status: String,
+    porcentaje_descuento: String,
+    monto_bruto: String,
+    monto_descuento: String,
+    monto_iva: String,
+    monto_exento: String,
+    monto_neto: String,
+    tasa: String,
+    direccion_entrega: String,
+    comentarios:String,
+    estatus:String,
+}

@@ -119,7 +119,7 @@ export default class Login extends Vue {
 
     async login() {
         this.overlay = true
-        const valid : any =  this.$refs.loginForm.validate();
+        const valid =  this.$refs.loginForm.validate();
         if (valid) { 
             const data : any = await sessionModule.login(this.LoginRequest)
             if (data.code == 200) {

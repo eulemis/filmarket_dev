@@ -29,7 +29,6 @@ import {
     @Action
         getListaPreciosAll() {
           return new Promise((resolve, reject) => {
-            http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
             http.get(`/listaprecios?page[number]=1&sort=-id`)
           .then(response =>  {
       
@@ -45,7 +44,6 @@ import {
     @Action
 		getListaPrecioById(id:number) {
 			return new Promise((resolve, reject) => {
-				http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 				http.get(`listaprecios/${id}`)
 				.then(response => {
 					if (response.status === 200) {   
@@ -60,7 +58,6 @@ import {
 
     @Action
 		async saveListaPrecio(dataLista: ListaPrecio) { 
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.post('/listaprecios', dataLista,
 			{
@@ -77,7 +74,7 @@ import {
 		async updateListaPrecio(dataClient:ListaPrecio) { 
 			let data : ListaPrecio = deserialize(dataClient,{changeCase:'camelCase'});
 			let id = data.id
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
+
 		const response =  await http
 			.patch(`listaprecios/${id}`, dataClient,
 			{
@@ -94,7 +91,6 @@ import {
 		async deleteListaPrecio(dataClient : any) { 
 		let data : any  = deserialize(dataClient,{changeCase:'camelCase'});
 		let id = data.id
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.patch(`listaprecios/${id}`, dataClient,
 			{
@@ -111,7 +107,6 @@ import {
 	@Action
         getMonedas() {
           return new Promise((resolve, reject) => {
-            http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
             http.get('/monedas?sort=-id')
           .then(response => {
       
@@ -128,6 +123,24 @@ import {
           })
       })
     }
+	@Action
+		getFilterSearch(data:any) {
+			return new Promise((resolve, reject) => {
+			http.get(`/listaprecios?filter[${data.filter}]=${data.query}&sort=-id`)
+				.then(response =>  {
+			
+					if (response.status === 200) {      
+						let search : any = [];
+						search = deserialize(response.data)
+						resolve(search);
+					}
+				})
+				.catch(error => {
+				reject(error)
+				})
+			})
+		}
+
   }  
   
   export default getModule(ListaPreciosModule);

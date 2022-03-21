@@ -6,13 +6,7 @@
     @update:show="(value) => $store.commit('set', ['sidebarShow', value])"
   >
     <CSidebarBrand class="d-md-down-none" to="/">
-      <CIcon 
-        class="c-sidebar-brand-full" 
-        name="logo" 
-        size="custom-size" 
-        :height="35" 
-        viewBox="0 0 556 134"
-      />
+      <img src="img/logos_filmarket/filmarket_blanco.png" width="180" alt="">
       <CIcon 
         class="c-sidebar-brand-minimized" 
         name="logo" 

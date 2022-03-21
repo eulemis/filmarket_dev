@@ -1,30 +1,38 @@
 <template>
     <div>
+        <v-overlay :value="overlay">
+            <v-progress-circular
+                indeterminate
+                size="64"
+            ></v-progress-circular>
+        </v-overlay>
      <TitleSection :sectiontitle="sectiontitle"/>
+       <input type="hidden" v-model="id" value="0" >
+ <!--    <div class="row">
+        <div class="col-md-6">
+            <div class="input-group">
+                <div class="custom-file mb-3"> 
+                <input type="file" class="custom-file-input" id="uploadfiles" ref="uploadfiles" multiple required />
+                <label class="custom-file-label" for="uploadfiles">Elija varias archivos para cargar</label>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 prueba">
+            <button type="button" @click="uploadFile()" name="upload" class="btn btn-warning">Cargar Archivos</button>
+        </div>
+    </div>
+    Mostrando los archivos cargados 
     <div>
-        <v-col cols="12" sm="6" md="3">
-            <v-text-field
-                label="id"
-                placeholder="id"
-                outlined
-                dense
-                v-model="id">
-            </v-text-field>
-        </v-col>
+        <ul >
+            <li  v-for="(filename, index) in this.$refs.uploadfiles" :key="index"> {{ filename }} </li>
+        </ul>
+    </div> 
+  -->
+       <!-- SOME FORM ELEMENTS HERE -->
+    <UploadFileMultiple :id="id"/>
+  
     </div>
-
-        <vue-dropzone ref="myVueDropzone" id="dropzone" 
-        :options="dropzoneOptions" 
-        :duplicateCheck="true"
-        @vdropzone-complete="afterUploadComplete"
-        :destroyDropzone="destroyDropzone"
-        @vdropzone-sending-multiple="sendMessage"
-        >
-        </vue-dropzone>  
-        <div class="mt-5 d-flex justify-end ">
-            <v-btn  @click="shootProcess()" color="success">Guardar</v-btn>   
-        </div>  
-    </div>
+    
 </template>
 <script>
 import articuloModule            from '@/store/modules/articuloModule';
@@ -34,48 +42,96 @@ export default {
     components:{
         vueDropzone
     },
+
     data(){
         return{
             dropzoneOptions :  {
-            url: 'https://api.filicabh.com/api/v1/productofotos',
+            url: 'https://api.filicabh.com/api/v1/productofotos/'+this.$route.params.id+'/upload',
             thumbnailWidth: 250,
-            maxFilesize: 0.5,
-            headers: { "My-Awesome-Header": "header value" },
+            maxFilesize: 5, // MB
+            maxFiles: 5,
             addRemoveLinks: true,
-            dictDefaultMessage: "<i class='fa fa-cloud-upload fa-2x'> </i> Subir Imagenes del Artículo",
-            autoProcessQueue:false
+            dictDefaultMessage: "<i class='fa fa-cloud-upload fa-2x'> </i> Cargar Imagenes del Artículo",
+            autoProcessQueue:false,
+            headers: { 'Content-Type': 'multipart/form-data',"Authorization": "Bearer " + localStorage.getItem('_token') }
         },
             destroyDropzone :  true,
-            id:0,
-            sectiontitle : 'Cargar Fotos al Artículo'
+            id:this.$route.params.id,
+            sectiontitle : 'Cargar Fotos al Artículo',
+            filenames: [],
+            overlay : false,
+            snackbar : false,
+            textmsj : '',
+            color : '',
+            uploadedFiles : [],
         }
     },
     
     methods: {
-        afterUploadComplete: async function (response) {            
-            if (response.status === 'success'){
-                const data = response;
-                console.log('uploaded', data);
-        
+        saveForm () {
+            if (this.$refs.myVueDropzone.getQueuedFiles().length) {
+                console.log(this.$refs.myVueDropzone.getQueuedFiles())
+               // this.$refs.myVueDropzone.headers = { "Authorization": "Bearer " + localStorage.getItem('_token') };
+                this.$refs.myVueDropzone.processQueue()
+            } else {
+                alert('Debe Agregar Imagenes')
             }
-            else
-                console.log('error uploaded', response);
         },
-        shootProcess: async function () {
-            //this.$refs.myVueDropzone1.headers = { "Authorization": "Bearer " + this.$store.getters.getToken };
-            this.$refs.myVueDropzone.processQueue();
+
+        errorUploading (file, message, xhr) {
+            console.log(file, message, xhr)
         },
-        sendMessage:  async  function(files, xhr, formData){
-          //alert('aqui')
-           //formData.append("id",this.id)
-           const data = await articuloModule.prueba(files);
+        fileUploaded (file, response) {
+            
+            this.filenames.push(file);
+
         },
+        async  sendingEvent (file, xhr, formData) {
+       
+            this.uploadedFiles.push(file);
+            console.log(file)
+            formData.append('fotos[]',this.uploadedFiles)
+    		this.overlay = true
+           // const dataUpload = await articuloModule.updateArticulo(this.$refs.myVueDropzone.getQueuedFiles());
+            this.textmsj = 'Imagenes Subidas con Éxito.'
+            this.color = 'success'
+            this.snackbar = true
+            this.back()
+            this.overlay = false
+            //const dataArticuloById = await articuloModule.getArticuloWithFotoById(this.$route.params.id);
+        },
+ 
+        async uploadFile(){
+            
+            let formData = new FormData();
+            var files = this.$refs.uploadfiles.files;
+            var totalfiles = this.$refs.uploadfiles.files.length;
+
+            for (var index = 0; index < totalfiles; index++) {
+                formData.append("fotos[]", files[index]);
+            } 
+         
+           // formData.append("id", this.id);
+            const data = await articuloModule.updateArticulo(formData);
+        },
+        removeAllFiles() {
+            this.$refs.myVueDropzone.removeAllFiles();
+        },
+        back() {
+        setTimeout(() => {
+           // this.$router.go(-1);
+            this.snackbar = false
+        },2000);
+    }
+ 
 
     }    
 }
 //https://www.youtube.com/watch?v=oL83LdJ_Yvs Link para el video tutorial ac erca de cargar imagenes
+//https://programmerclick.com/article/4536355486/
 </script>
 
 <style lang="scss" scoped>
   @import url("https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
+
 </style>

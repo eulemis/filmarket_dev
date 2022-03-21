@@ -85,9 +85,7 @@ class sessionModule extends VuexModule {
 		await http.post('login', userLogin)
 		.then((payload: any) => {
 			if (payload) {
-        console.log(payload)
 			const login = deserialize(payload.data)
-      console.log(login)
 			userLogin.code = payload.status
 			
 			if (userLogin.code === 200) {
@@ -114,7 +112,6 @@ class sessionModule extends VuexModule {
 
   @Action
   async logout() {
-    http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
     await http
       .post('logout')
       .then((payload: any) => {

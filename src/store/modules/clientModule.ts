@@ -29,7 +29,6 @@ import {
     @Action
         getClientesAll() {
           return new Promise((resolve, reject) => {
-            http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
             http.get('/clientes?sort=-id')
           .then(response  => {
       
@@ -46,7 +45,6 @@ import {
 	@Action
 		getClientById(id:number) {
 			return new Promise((resolve, reject) => {
-				http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 				http.get(`clientes/${id}`)
 				.then(response => {
 					if (response.status === 200) {   
@@ -60,7 +58,6 @@ import {
     @Action
       getZonasAll(){
         return new Promise((resolve, reject) => {
-          http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
           http.get('/zonas')
         .then(response => {
      
@@ -79,7 +76,6 @@ import {
     @Action
       	getTipoClienteAll(){
 			return new Promise((resolve, reject) => {
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 			http.get('/tiposclientes')
 			.then(response => {
 		
@@ -98,7 +94,6 @@ import {
     @Action
       	getSegmentosAll(){
 			return new Promise((resolve, reject) => {
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 			http.get('/segmentos')
 			.then(response => {
 		
@@ -117,7 +112,6 @@ import {
     @Action
       	getVendedorAll(){
 			return new Promise((resolve, reject) => {
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 			http.get('/vendedores')
 			.then(response => {
 	
@@ -136,7 +130,6 @@ import {
     @Action
 		getCondicionesPagoAll(){
 			return new Promise((resolve, reject) => {
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 			http.get('/condicionespagos')
 			.then(response => {
 		
@@ -154,7 +147,6 @@ import {
 		}
     @Action
 		async saveClient(dataClient: Cliente) { 
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.post('/clientes', dataClient,
 			{
@@ -171,7 +163,7 @@ import {
 		async updateClient(dataClient:Cliente) { 
 			let data : Cliente = deserialize(dataClient,{changeCase:'camelCase'});
 			let id = data.id
-			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
+
 		const response =  await http
 			.patch(`clientes/${id}`, dataClient,
 			{
@@ -188,7 +180,6 @@ import {
 		async deleteCliente(dataClient : any) { 
 		let data : any  = deserialize(dataClient,{changeCase:'camelCase'});
 		let id = data.id
-		http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 		const response =  await http
 			.patch(`clientes/${id}`, dataClient,
 			{
@@ -201,10 +192,40 @@ import {
 				return await this.getClientesAll();
 			}
 		}  
-
+		@Action
+	    getFilterSearch(data:any) {
+			return new Promise((resolve, reject) => {
+			  http.get(`/clientes?filter[${data.filter}]=${data.query}&sort=-id`)
+			.then(response =>  {
+		
+				  if (response.status === 200) {      
+					  let search : any = [];
+					  search = deserialize(response.data)
+					  resolve(search);
+				  }
+			})
+			.catch(error => {
+			  reject(error)
+			})
+		})
+	  }
+	  @Action
+	  async dataPaginate(data:any) {
+		return new Promise((resolve, reject) => {
+			http.get(`/${data.endpoint}?page[number]=${data.page.page}&page[size]=${data.page.itemsPerPage}&sort=-id`)
+		  .then(response =>  {
+	  
+				if (response.status === 200) {      
+					resolve(response);
+				}
+		  	})
+			.catch(error => {
+				reject(error)
+			})
+		})
+	  }
 	  @Action
 	  async saveUsuarioCliente(dataCliente: any) { 
-	  http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 	  const response =  await http
 		  .post('usuario/asignar', dataCliente,
 		  {

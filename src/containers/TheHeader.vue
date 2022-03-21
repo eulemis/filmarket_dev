@@ -11,7 +11,7 @@
       @click="$store.commit('toggleSidebarDesktop')"
     />
     <CHeaderBrand class="mx-auto d-lg-none" to="/">
-      <CIcon name="logo" height="48" alt="Logo"/>
+     <img src="img/logos_filmarket/filmarket_horizontal.png" width="180" alt="">
     </CHeaderBrand>
     <CHeaderNav class="d-md-down-none mr-auto">
       

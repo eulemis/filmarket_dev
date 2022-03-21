@@ -126,6 +126,26 @@ import {
 				return await this.getVendedoresAll();
 			}
 		}  
+		
+	@Action
+		getFilterSearch(data:any) {
+			return new Promise((resolve, reject) => {
+			http.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
+			http.get(`/vendedores?filter[${data.filter}]=${data.query}&sort=-id`)
+				.then(response =>  {
+			
+					if (response.status === 200) {      
+						let search : any = [];
+						search = deserialize(response.data)
+						resolve(search);
+					}
+				})
+				.catch(error => {
+				reject(error)
+				})
+			})
+		}
+
   }  
   
   export default getModule(vendedorModule);
