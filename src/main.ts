@@ -7,7 +7,8 @@ import CoreuiVue from '@coreui/vue'
 import { iconsSet as icons } from '@/assets/icons/icons'
 import store from './store'
 import { ValidationProvider, ValidationObserver } from '@/vee-validate'
-import responseError        from '@/components/responseError.vue'
+import responseError        from '@/components/responseError.vue';
+import UploadFileMultiple  from '@/components/UploadFileMultiple.vue';
 import Notificacion       from '@/components/Notificaciones.vue';
 import TitleSection     from '@/components/TituloSection.vue'
 import ModalDelete    from '@/components/ModalDelete.vue';
@@ -21,6 +22,7 @@ import 'vue-form-wizard/dist/vue-form-wizard.min.css'
 
 Vue.component('ValidationProvider', ValidationProvider);
 Vue.component('ValidationObserver', ValidationObserver);
+Vue.component('UploadFileMultiple', UploadFileMultiple);
 Vue.component('responseError', responseError);
 Vue.component('Notificacion', Notificacion);
 Vue.component('TitleSection', TitleSection);

@@ -100,7 +100,7 @@
                 this.dataUpload = [];
             },
             async uploadFile(){ 
-                 
+                this.overlay = true
                 const _this = this 
                 let formData = new FormData();
                 var files = this.dataUpload;

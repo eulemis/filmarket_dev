@@ -9,10 +9,14 @@ const http = axios.create({
   baseURL: URL
 });
 
+const https = axios.create({
+  baseURL: URL
+});
+
 
 
 let isAlreadyFetchingAccessToken = false;
-  
+
 http.interceptors.request.use( (config) => {
   store.commit('loading',true);
   // Optional headers
@@ -21,6 +25,19 @@ http.interceptors.request.use( (config) => {
     const tk  = token?.replaceAll('"',"");
     config.headers.Authorization = `Bearer ${tk}`;
     config.headers['Content-Type'] = 'application/vnd.api+json'
+  }
+  return config;
+
+}, (error) => {
+  return Promise.reject(error);
+});
+  
+https.interceptors.request.use( (config) => {
+  store.commit('loading',true);
+  // Optional headers
+  if (localStorage.getItem('_token')) {
+    //const token = localStorage.getItem('_token');
+   // config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 
@@ -66,7 +83,7 @@ http.interceptors.response.use( (response) => {
 });
 
 
-export { http, URL};
+export { http, https, URL};
 
 
 
